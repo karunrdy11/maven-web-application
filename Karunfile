@@ -1,0 +1,29 @@
+node()
+{
+    def mavenHome=tool name :"maven3.9.6"
+    stage('git checkout')
+    {
+        git branch: 'development', credentialsId: '75605414-528b-49bd-94e4-03ecbe6cb749', url: 'https://github.com/karunrdy11/maven-web-application.git'
+    }
+    
+    stage('build')
+    {
+        sh "${mavenHome}/bin/mvn clean package"
+    }
+    
+    stage('execute sonarqube report')
+    {
+        sh "${mavenHome}/bin/mvn clean package sonar:sonar"   
+    }
+    
+    stage('adding build artifact to nexus')
+    {
+         sh "${mavenHome}/bin/mvn clean package deploy"
+    }
+    
+    stage('deploy artifact into container')
+    {
+        deploy adapters: [tomcat9(credentialsId: 'e61e827d-5186-406e-a96e-abd8a0fd591b', path: '', url: 'http://13.201.7.203:8080/')], contextPath: 'maven-web-application.war', war: 'target/maven-web-application.war'       
+    }
+    
+}
